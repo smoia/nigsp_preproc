@@ -125,6 +125,47 @@ echo "************************************"
 ${scriptdir}/03.func_spacecomp.sh -func_in ${bold}_cr -fdir ${fdir} -anat ${anat} \
 								  -mref ${sbref} -aseg ${aseg} -tmp ${tmp}
 
+if [[ ${sbref} == "none" ]]
+then
+	sbref=${bold}_ref
+
+	# echo "************************************"
+	# echo "*** Func Pepolar SBRef BOLD"
+	# echo "************************************"
+	# echo "************************************"
+
+	# ${scriptdir}/02.func_pepolar.sh -func_in ${sbref} -fdir ${fdir} \
+	# 								-pepolar ${sbref}_topup -tmp ${tmp}
+
+	# echo "************************************"
+	# echo "*** Func spacecomp SBRef"
+	# echo "************************************"
+	# echo "************************************"
+
+	# ${scriptdir}/11.sbref_spacecomp.sh -sbref_in ${sbref}_tpp -anat ${anat} \
+	# 								   -fdir ${fdir}
+
+	# sbreffunc=${fdir}/$( basename ${sbref} )
+
+	# # Copy this sbref to reg folder
+	# echo "imcp ${sbref}_tpp ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref"
+	# imcp ${sbref}_tpp ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
+
+	# echo "imcp ${sbreffunc}_brain ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain"
+	# imcp ${sbreffunc}_brain ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain
+	# echo "imcp ${sbreffunc}_brain_mask ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain_mask"
+	# imcp ${sbreffunc}_brain_mask ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain_mask
+	# echo "imcp ${anat}2sbref.nii.gz ${wdr}/sub-${sub}/ses-${ses}/reg/$(basename ${anat})2sbref"
+	# imcp ${anat}2sbref.nii.gz ${wdr}/sub-${sub}/ses-${ses}/reg/$(basename ${anat})2sbref
+
+	# echo "if_missing_do mkdir ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup"
+	# if_missing_do mkdir ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup
+
+	# echo "cp -R ${sbreffunc}_topup/* ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup/."
+	# cp -R ${sbreffunc}_topup/* ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup/.
+
+fi
+
 echo "************************************"
 echo "*** Func greyplot ${task} BOLD (pre)"
 echo "************************************"
