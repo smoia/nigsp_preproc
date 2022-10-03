@@ -7,7 +7,9 @@ displayhelp() {
 echo "Required:"
 echo "sub ses prjname wdr"
 echo "Optional:"
-echo "anatsfx asegsfx voldiscard sbref mask slicetimeinterp despike fwhm scriptdir tmp debug"
+echo "anat1sfx anat2sfx std mmres voldiscard sbref fmask dmask fwhm \
+	  slicetimeinterp direc pepolar sliceorder mporder axis scriptdir \
+	  tmp overwrite run_prep run_anat run_func run_dwi debug"
 exit ${1:-0}
 }
 
@@ -22,21 +24,27 @@ fi
 overwrite=no
 run_prep=yes
 run_anat=yes
-anat1sfx=acq-uni_T1w
-anat2sfx=T2w
+run_func=yes
+run_dwi=yes
 
+anat1sfx=acq-mp2rage_T1w
+anat2sfx=acq-mp2rage_inv-2_MP2RAGE
 std=MNI152_1mm_T1_brain
 mmres=2
-normalise=no
 voldiscard=10
-slicetimeinterp=none
-despike=no
 sbref=none
-mask=default
+fmask=default
+dmask=default
+fwhm=none
+slicetimeinterp=none
+direc=AP
+pepolar=none
+sliceorder=none
+mporder=6
+axis="-axial"
 tmp=.
 scriptdir="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 debug=no
-fwhm=none
 
 ### print input
 printline=$( basename -- $0 )
@@ -51,24 +59,30 @@ do
 		-wdr)		wdr=$2;shift;;
 		-prjname)	prjname=$2;shift;;
 
-		-TEs)				TEs="$2";shift;;
-		-tasks)				tasks="$2";shift;;
 		-anat1sfx)			anat1sfx=$2;shift;;
 		-anat2sfx)			anat2sfx=$2;shift;;
 		-std)				std=$2;shift;;
 		-mmres)				mmres=$2;shift;;
-		-normalise) 		normalise=yes;;
 		-voldiscard)		voldiscard=$2;shift;;
 		-sbref)				sbref=$2;shift;;
-		-mask)				mask="$2";shift;;
+		-fmask)				fmask="$2";shift;;
+		-dmask)				dmask="$2";shift;;
 		-fwhm)				fwhm="$2";shift;;
 		-slicetimeinterp)	slicetimeinterp="$2";shift;;
-		-despike)			despike=yes;;
+		-direc)				direc="$2";shift;;
+		-pepolar)			pepolar="$2";shift;;
+		-sliceorder)		sliceorder="$2";shift;;
+		-mporder)			mporder="$2";shift;;
+		-axial)				axis="-axial";;
+		-sagittal)			axis="-sagittal";;
+		-coronal)			axis="-coronal";;
 		-scriptdir)			scriptdir=$2;shift;;
 		-tmp)				tmp=$2;shift;;
 		-overwrite)			overwrite=yes;;
 		-skip_prep)			run_prep=no;;
 		-skip_anat)			run_anat=no;;
+		-skip_func)			run_func=no;;
+		-skip_dwi)			run_dwi=no;;
 		-debug)				debug=yes;;
 
 		-h)			displayhelp;;
@@ -81,7 +95,9 @@ done
 # Check input
 checkreqvar sub ses prjname wdr
 [[ ${scriptdir: -1} == "/" ]] && scriptdir=${scriptdir%/}
-checkoptvar anat1sfx anat2sfx voldiscard sbref mask slicetimeinterp despike fwhm scriptdir tmp debug
+checkoptvar anat1sfx anat2sfx std mmres voldiscard sbref fmask dmask fwhm
+checkoptvar slicetimeinterp direc pepolar sliceorder mporder axis scriptdir
+checkoptvar tmp overwrite run_prep run_anat run_func run_dwi debug
 
 [[ ${debug} == "yes" ]] && set -x
 
@@ -166,18 +182,13 @@ if [[ ${anat2sfx} != "none" ]]; then anat2=sub-${sub}_ses-T1_${anat2sfx}; else a
 
 if [[ "${run_anat}" == "yes" ]]
 then
-	if [ ${ses} -eq 1 ]
+	if [ ${ses} == "T1" ]
 	then
-		# If asked & it's ses 01, run anat
+		# If asked & it's ses T1, run anat
 		${scriptdir}/anat_preproc.sh -sub ${sub} -ses ${ses} -wdr ${wdr} \
 												  -anat1sfx ${anat1sfx} -anat2sfx ${anat2sfx} \
 												  -std ${std} -mmres ${mmres} -normalise \
 												  -tmp ${tmp}
-	elif [ ${ses} -lt 1 ]
-	then
-		echo "ERROR: the session number introduced makes no sense."
-		echo "Please run a positive numbered session."
-		exit 1
 	elif [ ! -d ${uni_adir} ]
 	then
 		# If it isn't ses 01 but that ses wasn't run, exit.
@@ -211,36 +222,42 @@ echo ""
 aseg=${uni_adir}/${anat1}
 anat=${uni_adir}/${anat2}
 [[ ${sbref} == "default" ]] && sbref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
-[[ ${mask} == "default" ]] && mask=${sbref}_brain_mask
+[[ ${fmask} == "default" ]] && fmask=${sbref}_brain_mask
 
-if [[ ${tasks} != "none" ]]
+if [[ ${run_func} == "yes" ]]
 then
-	for task in ${tasks}
-	do
-		runfuncpreproc="${scriptdir}/func_preproc.sh -sub ${sub} -ses ${ses}"
-		runfuncpreproc="${runfuncpreproc} -task ${task} -TEs \"${TEs}\""
-		runfuncpreproc="${runfuncpreproc} -wdr ${wdr} -anat ${anat} -aseg ${aseg}"
-		runfuncpreproc="${runfuncpreproc} -voldiscard ${voldiscard} -slicetimeinterp ${slicetimeinterp}"
-		runfuncpreproc="${runfuncpreproc} -sbref ${sbref}"
-		runfuncpreproc="${runfuncpreproc} -mask ${mask} -fwhm ${fwhm} -tmp ${tmp}"
-		runfuncpreproc="${runfuncpreproc} -den_motreg -den_detrend"
-		
-		if [[ ${task} != "breathhold" ]]
-		then
-			runfuncpreproc="${runfuncpreproc} -den_meica"
-			if [[ ${task} == *"rest"* ]]
-			then
-				runfuncpreproc="${runfuncpreproc} -applynuisance"
-			fi
-		fi
 
-		echo "# Generating the command:"
-		echo ""
-		echo "${runfuncpreproc}"
-		echo ""
+	${scriptdir}/func_preproc.sh -sub ${sub} -ses ${ses} -wdr ${wdr} -anat ${anat} \
+								 -aseg ${aseg} -voldiscard ${voldiscard} \
+								 -slicetimeinterp ${slicetimeinterp} -sbref ${sbref} \
+								 -mask ${fmask} -fwhm ${fwhm} -tmp ${tmp} \
+								 -den_motreg -den_detrend
 
-		eval ${runfuncpreproc}
-	done
+fi
+
+echo ""
+echo ""
+
+
+######################################
+#########    DWI preproc     #########
+######################################
+
+echo ""
+echo ""
+
+aseg=${uni_adir}/${anat1}
+anat=${uni_adir}/${anat2}
+[[ ${dmask} == "default" ]] && dmask=none
+
+if [[ ${run_dwi} == "yes" ]]
+then
+
+	${scriptdir}/dwi_preproc.sh -sub ${sub} -ses ${ses} -wdr ${wdr} ${axis} \
+								-direction ${direc} -anat ${anat} -aseg ${aseg} \
+								-mask ${dmask} -pepolar ${pepolar} -sliceorder ${sliceorder} \
+								-mporder ${mporder} -tmp ${tmp}
+
 fi
 
 echo ""
@@ -253,4 +270,4 @@ echo "***      Preproc COMPLETE!       ***"
 echo "************************************"
 echo "************************************"
 
-if [[ ${debug} == "yes" ]]; then set +x; else rm -rf ${tmp}; fi
+# if [[ ${debug} == "yes" ]]; then set +x; else rm -rf ${tmp}; fi

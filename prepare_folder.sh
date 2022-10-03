@@ -97,7 +97,8 @@ sesfld=derivatives/${prjname}/sub-${sub}/ses-${ses}
 [[ "${overwrite}" == "yes" ]] && replace_and mkdir ${sesfld}
 
 if_missing_do mkdir ${sesfld}/func ${sesfld}/anat \
-					${sesfld}/fmap ${sesfld}/reg
+					${sesfld}/fmap ${sesfld}/reg \
+					${sesfld}/dwi
 
 echo "Initialise files"
 if_missing_do copy ${stdpath}/${std}.nii.gz ${sesfld}/reg/${std}.nii.gz
@@ -107,5 +108,7 @@ if_missing_do copy ${stdpath}/${std}.nii.gz ${sesfld}/reg/${std}.nii.gz
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/func/*.nii.gz ${tmp}/.
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/anat/*.nii.gz ${tmp}/.
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/fmap/*.nii.gz ${tmp}/.
+imcp ${sourcepath}/sub-${sub}/ses-${ses}/fmap/*.json ${tmp}/.
+imcp ${sourcepath}/sub-${sub}/ses-${ses}/dwi/*.nii.gz ${tmp}/.
 
 cd ${cwd}

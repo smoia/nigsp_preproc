@@ -7,7 +7,7 @@ displayhelp() {
 echo "Required:"
 echo "anat_in adir"
 echo "Optional:"
-echo "mask aref c3dsource"
+echo "mask aref {bet 3dSS} c3dsource tmp"
 exit ${1:-0}
 }
 
@@ -21,7 +21,9 @@ fi
 # Preparing the default values for variables
 mask=none
 aref=none
+brain_extract=3dSS
 c3dsource=none
+tmp=.
 
 ### print input
 printline=$( basename -- $0 )
@@ -36,7 +38,10 @@ do
 
 		-mask)		mask=$2;shift;;
 		-aref)		aref=$2;shift;;
+		-bet)		brain_extract=bet;;
+		-3dSS)		brain_extract=3dSS;;
 		-c3dsource)	c3dsource=$2;shift;;
+		-tmp)		tmp=$2;shift;;
 
 		-h)			displayhelp;;
 		-v)			version;exit 0;;
@@ -47,7 +52,7 @@ done
 
 # Check input
 checkreqvar anat_in adir
-checkoptvar mask aref c3dsource
+checkoptvar mask aref brain_extract c3dsource tmp
 
 ### Remove nifti suffix
 for var in anat_in mask aref
@@ -70,10 +75,19 @@ if [[ "${mask}" == "none" ]]
 then
 	# If no mask is specified, then creates it.
 	echo "Skull Stripping ${anat}"
-	3dSkullStrip -input ${anat_in}.nii.gz \
-				 -prefix ${anat}_brain.nii.gz \
-				 -orig_vol -overwrite
-	fslmaths ${anat}_brain -bin ${anat}_brain_mask
+	if [[ "${brain_extract}" == "3dSS" ]]
+	then
+		3dSkullStrip -input ${anat_in}.nii.gz \
+					 -prefix ${tmp}/${anat}_brain.nii.gz \
+					 -orig_vol -overwrite
+		# Momentarily forcefully change header because SkullStrips plumbs the volume.
+		3dcalc -a ${anat_in}.nii.gz -b ${tmp}/${anat}_brain.nii.gz -expr "a*step(b)" \
+			   -prefix ${anat}_brain.nii.gz -overwrite
+		fslmaths ${anat}_brain -bin ${anat}_brain_mask
+	elif [[ "${brain_extract}" == "bet" ]]
+	then
+		bet ${anat_in} ${anat}_brain  -R -f 0.5 -g 0 -n -m
+	fi
 	mask=${anat}_brain_mask
 	echo ""
 else

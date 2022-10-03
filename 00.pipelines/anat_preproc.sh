@@ -19,8 +19,8 @@ if [[ ( $# -eq 0 ) ]]
 fi
 
 # Preparing the default values for variables
-anat1sfx=acq-uni_T1w
-anat2sfx=none
+anat1sfx=acq-mp2rage_T1w
+anat2sfx=acq-mp2rage_inv-2_MP2RAGE
 std=MNI152_1mm_T1_brain
 mmres=2
 normalise=no
@@ -79,7 +79,7 @@ adir=${wdr}/sub-${sub}/ses-${ses}/anat
 ######################################
 
 echo "************************************"
-echo "*** Anat correction ${anat1}"
+echo "*** Anat correction  $( basename ${anat1})"
 echo "************************************"
 echo "************************************"
 
@@ -103,7 +103,7 @@ then
 	echo "************************************"
 
 	${scriptdir}/02.anat_skullstrip.sh -anat_in ${anat2}_bfc -adir ${adir} \
-									   -aref ${anat1}
+									   -aref ${anat1} -bet
 
 	echo "************************************"
 	echo "*** Anat skullstrip $( basename ${anat1})"

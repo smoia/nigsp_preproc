@@ -29,7 +29,7 @@ echo "${printline} " "$@"
 while [ ! -z "$1" ]
 do
 	case "$1" in
-		-anat_in)		anat_in=$2;shift;;
+		-anat_in)	anat_in=$2;shift;;
 		-adir)		adir=$2;shift;;
 
 		-tmp)		tmp=$2;shift;;

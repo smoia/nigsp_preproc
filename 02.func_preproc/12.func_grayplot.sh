@@ -42,7 +42,7 @@ do
 		-adir)		adir=$2;shift;;
 		-mref)		mref=$2;shift;;
 		-aseg)		aseg=$2;shift;;
-		-polort)		polort=$2;shift;;
+		-polort)	polort=$2;shift;;
 		-tmp)		tmp=$2;shift;;
 
 		-h)			displayhelp;;

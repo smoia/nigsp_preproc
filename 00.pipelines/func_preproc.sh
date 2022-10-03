@@ -5,7 +5,7 @@ source $( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/../utils.sh
 
 displayhelp() {
 echo "Required:"
-echo "sub ses task TEs wdr"
+echo "sub ses wdr"
 echo "Optional:"
 echo "anat aseg voldiscard polort sbref mask slicetimeinterp \
 	  despike fwhm den_motreg den_detrend den_meica den_tissues \
@@ -22,6 +22,8 @@ fi
 # Preparing the default values for variables
 anat=none
 aseg=none
+fmap_str=''
+fullfmap=none
 voldiscard=10
 polort=4
 slicetimeinterp=none
@@ -48,11 +50,12 @@ do
 	case "$1" in
 		-sub)		sub=$2;shift;;
 		-ses)		ses=$2;shift;;
-		-task)		task=$2;shift;;
 		-wdr)		wdr=$2;shift;;
 
 		-anat)				anat=$2;shift;;
 		-aseg)				aseg=$2;shift;;
+		-fmap_str)			fmap_str=$2;shift;;
+		-fullfmap)			fullfmap=$2;shift;;
 		-voldiscard)		voldiscard=$2;shift;;
 		-polrot)			polort=$2;shift;;
 		-sbref)				sbref=$2;shift;;
@@ -76,16 +79,16 @@ do
 done
 
 # Check input
-checkreqvar sub ses task wdr
+checkreqvar sub ses wdr
 [[ ${scriptdir: -1} == "/" ]] && scriptdir=${scriptdir%/}
 [[ ${sbref} == "default" ]] && sbref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
 [[ ${mask} == "default" ]] && mask=${sbref}_brain_mask
-checkoptvar anat aseg voldiscard polort sbref mask slicetimeinterp despike fwhm den_motreg den_detrend den_tissues applynuisance scriptdir tmp debug
+checkoptvar anat aseg fmap_str fullfmap voldiscard polort sbref mask slicetimeinterp despike fwhm den_motreg den_detrend den_tissues applynuisance scriptdir tmp debug
 
 [[ ${debug} == "yes" ]] && set -x
 
 ### Remove nifti suffix
-for var in anatsfx asegsfx
+for var in anat aseg fullfmap
 do
 	eval "${var}=${!var%.nii*}"
 done
@@ -93,14 +96,14 @@ done
 #Derived variables
 fileprx=sub-${sub}_ses-${ses}
 fdir=${wdr}/sub-${sub}/ses-${ses}/func
-bold=${fileprx}_task-${task}_bold
+bold=${fileprx}_task-rest_bold
 [[ ${tmp} != "." ]] && fileprx=${tmp}/${fileprx}
 ######################################
 #########    Task preproc    #########
 ######################################
 
 echo "************************************"
-echo "*** Func correct ${task} BOLD"
+echo "*** Func correct rest BOLD"
 echo "************************************"
 echo "************************************"
 
@@ -118,56 +121,46 @@ eval ${runfunccorrect}
 
 
 echo "************************************"
-echo "*** Func spacecomp ${task}"
+echo "*** Func spacecomp rest"
 echo "************************************"
 echo "************************************"
 
 ${scriptdir}/03.func_spacecomp.sh -func_in ${bold}_cr -fdir ${fdir} -anat ${anat} \
 								  -mref ${sbref} -aseg ${aseg} -tmp ${tmp}
 
-if [[ ${sbref} == "none" ]]
-then
-	sbref=${bold}_ref
-
-	# echo "************************************"
-	# echo "*** Func Pepolar SBRef BOLD"
-	# echo "************************************"
-	# echo "************************************"
-
-	# ${scriptdir}/02.func_pepolar.sh -func_in ${sbref} -fdir ${fdir} \
-	# 								-pepolar ${sbref}_topup -tmp ${tmp}
-
-	# echo "************************************"
-	# echo "*** Func spacecomp SBRef"
-	# echo "************************************"
-	# echo "************************************"
-
-	# ${scriptdir}/11.sbref_spacecomp.sh -sbref_in ${sbref}_tpp -anat ${anat} \
-	# 								   -fdir ${fdir}
-
-	# sbreffunc=${fdir}/$( basename ${sbref} )
-
-	# # Copy this sbref to reg folder
-	# echo "imcp ${sbref}_tpp ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref"
-	# imcp ${sbref}_tpp ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
-
-	# echo "imcp ${sbreffunc}_brain ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain"
-	# imcp ${sbreffunc}_brain ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain
-	# echo "imcp ${sbreffunc}_brain_mask ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain_mask"
-	# imcp ${sbreffunc}_brain_mask ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain_mask
-	# echo "imcp ${anat}2sbref.nii.gz ${wdr}/sub-${sub}/ses-${ses}/reg/$(basename ${anat})2sbref"
-	# imcp ${anat}2sbref.nii.gz ${wdr}/sub-${sub}/ses-${ses}/reg/$(basename ${anat})2sbref
-
-	# echo "if_missing_do mkdir ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup"
-	# if_missing_do mkdir ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup
-
-	# echo "cp -R ${sbreffunc}_topup/* ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup/."
-	# cp -R ${sbreffunc}_topup/* ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup/.
-
-fi
 
 echo "************************************"
-echo "*** Func greyplot ${task} BOLD (pre)"
+echo "*** Func Fieldmap BOLD"
+echo "************************************"
+echo "************************************"
+
+${scriptdir}/02.func_fieldmap.sh -func_in ${bold}_bet -fdir ${fdir} \
+								 -fmap_str ${fmap_str} -fullfmap ${fullfmap} \
+								 -tmp ${tmp}
+
+
+sbreffunc=${fdir}/$( basename ${sbref} )
+
+# Copy this sbref to reg folder
+echo "imcp ${sbref}_tpp ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref"
+imcp ${sbref}_tpp ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
+
+echo "imcp ${sbreffunc}_brain ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain"
+imcp ${sbreffunc}_brain ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain
+echo "imcp ${sbreffunc}_brain_mask ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain_mask"
+imcp ${sbreffunc}_brain_mask ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_brain_mask
+echo "imcp ${anat}2sbref.nii.gz ${wdr}/sub-${sub}/ses-${ses}/reg/$(basename ${anat})2sbref"
+imcp ${anat}2sbref.nii.gz ${wdr}/sub-${sub}/ses-${ses}/reg/$(basename ${anat})2sbref
+
+echo "if_missing_do mkdir ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup"
+if_missing_do mkdir ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup
+
+echo "cp -R ${sbreffunc}_topup/* ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup/."
+cp -R ${sbreffunc}_topup/* ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref_topup/.
+
+
+echo "************************************"
+echo "*** Func greyplot rest BOLD (pre)"
 echo "************************************"
 echo "************************************"
 
@@ -184,7 +177,7 @@ mv ${bold_in}_gp_peel.png ${fdir}/$( basename ${bold_in} )_raw_gp_peel.png
 
 	
 echo "************************************"
-echo "*** Func Nuiscomp ${task} BOLD"
+echo "*** Func Nuiscomp rest BOLD"
 echo "************************************"
 echo "************************************"
 
@@ -203,21 +196,14 @@ echo "${runnuiscomp}"
 echo ""
 
 eval ${runnuiscomp}
-	
-# echo "************************************"
-# echo "*** Func Pepolar ${task} BOLD"
-# echo "************************************"
-# echo "************************************"
 
-# ${scriptdir}/02.func_pepolar.sh -func_in ${boldsource} -fdir ${fdir} \
-# 								-pepolar ${sbref}_topup -tmp ${tmp}
 
 boldout=$( basename ${bold} )
 if [[ ${fwhm} != "none" ]]
 then
 
 	echo "************************************"
-	echo "*** Func smoothing ${task} BOLD"
+	echo "*** Func smoothing rest BOLD"
 	echo "************************************"
 	echo "************************************"
 
@@ -233,7 +219,7 @@ echo "3dcalc -a ${boldsource}.nii.gz -b ${mask}.nii.gz -expr 'a*b' -prefix ${fdi
 	   -short -gscale -overwrite
 
 echo "************************************"
-echo "*** Func greyplot ${task} BOLD (post)"
+echo "*** Func greyplot rest BOLD (post)"
 echo "************************************"
 echo "************************************"
 ${scriptdir}/12.func_grayplot.sh -func_in ${boldsource} -fdir ${fdir} -anat_in ${anat} \
