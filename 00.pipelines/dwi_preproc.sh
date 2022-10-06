@@ -90,7 +90,7 @@ fileprx=sub-${sub}_ses-${ses}
 ddir=${wdr}/sub-${sub}/ses-${ses}/dwi
 dwi=${fileprx}_dir-${direc}_dwi
 bforward=${fileprx}_dir-$( echo ${direc} | rev )_dwi
-[[ ${tmp} != "." ]] && fileprx=${tmp}/${fileprx}
+[[ ${tmp} != "." ]] && dwi=${tmp}/${dwi} && bforward=${tmp}/${bforward}
 ######################################
 #########     DWI preproc    #########
 ######################################
@@ -130,7 +130,7 @@ echo "*** DWI Eddy"
 echo "************************************"
 echo "************************************"
 
-# rundwieddy="${scriptdir}/03.dwi_eddy.sh -dwi_in ${tmp}/${dwi}_cr -pepolar ${pepolar}"
+rundwieddy="${scriptdir}/03.dwi_eddy.sh -dwi_in ${tmp}/${dwi}_cr -pepolar ${pepolar}"
 rundwieddy="${rundwieddy} -ddir ${ddir} -mask ${mask} -sliceorder ${sliceorder}"
 rundwieddy="${rundwieddy} -mporder ${mporder} -tmp ${tmp}"
 [[ ${repol} == "yes" ]] && rundwieddy="${rundwieddy} -repol"
