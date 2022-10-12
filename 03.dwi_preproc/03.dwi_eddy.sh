@@ -99,6 +99,8 @@ echo ""
 
 eval ${runeddy}
 
+#### USE ROTATED BVECS FROM EDDY
+
 # Bet if necessary and get reference
 dwiextract -bzero -fslgrad ${dinfo}.bvec ${dinfo}.bval ${tmp}/${dwi}_eddy.nii.gz ${tmp}/${dwi}_b0.nii.gz
 
