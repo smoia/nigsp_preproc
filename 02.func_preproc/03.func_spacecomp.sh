@@ -81,8 +81,16 @@ then
 	if [[ "${mref}" == "none" ]]
 	then
 		echo "Creating a reference for ${func}"
-		mref=${func}_ref
-		fslroi ${func_in} ${mref} 42 1
+		filesfx=${func#sub-*_}
+		filesfx=${funcsfx#ses-*_}
+		mref=${fdir}/../reg/${func%$filesfx}mref
+		fslroi ${func_in} ${func}_ref 42 1
+		echo "BETting reference ${func}_ref"
+		bet ${func}_ref ${func}_ref_brain -R -f 0.5 -g 0 -n -m
+		echo "Copying reference and mask in \`reg\` folder"
+		imcp ${func}_ref ${mref}
+		imcp ${func}_ref_brain ${mref}_brain
+		imcp ${func}_ref_brain_mask ${mref}_brain_mask
 	fi
 
 	echo "McFlirting ${func}"
@@ -101,7 +109,7 @@ then
 	fsl_motion_outliers -i ${func_in} -o ${tmp}/${func}_mcf_fd_confounds -s ${func}_fd.par -p ${func}_fd --fd
 fi
 
-if [[ ! -e "${mref}_brain_mask" && "${mref}" != "none" ]]
+if [[ ! -e "${mref}_brain_mask.nii.gz" &&  ! -e "${mref}_mask.nii.gz" && "${mref}" != "none" ]]
 then
 	echo "BETting reference ${mref}"
 	bet ${mref} ${mref}_brain -R -f 0.5 -g 0 -n -m
@@ -113,17 +121,18 @@ fslmaths ${tmp}/${func}_mcf -mas ${mref}_brain_mask ${tmp}/${func}_bet
 
 ## 02. Anat Coreg
 mrefsfx=$( basename ${mref} )
-mrefsfx=${mref#*ses-*_}
+mrefsfx=${mref#sub-*_}
+mrefsfx=${mrefsfx#ses-*_}
 anat2mref=../reg/${anat}2${mrefsfx}0GenericAffine
 
 if [[ "${anat}" != "none" && ! -e "${anat2mref}.mat" ]]
 then
 	echo "Coregistering ${func} to ${anat}"
-	flirt -in ${anat}_brain -ref ${mref}_brain -out ${anat}2${mrefsfx} -omat ${anat}2${mrefsfx}_fsl.mat \
-	-cost normmi -searchcost normmi \
+	if_missing_do stop ../anat/${anat}_brain.nii.gz
+	flirt -in ../anat/${anat}_brain -ref ${mref}_brain -out ${anat}2${mrefsfx} -omat ${anat}2${mrefsfx}_fsl.mat \
 	-searchry -90 90 -searchrx -90 90 -searchrz -90 90
 	echo "Affining for ANTs"
-	c3d_affine_tool -ref ${mref}_brain -src ${anat}_brain \
+	c3d_affine_tool -ref ${mref}_brain -src ../anat/${anat}_brain \
 	${anat}2${mrefsfx}_fsl.mat -fsl2ras -oitk ${anat}2${mrefsfx}0GenericAffine.mat
 	mv ${anat}2${mrefsfx}* ../reg/.
 fi
