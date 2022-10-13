@@ -55,7 +55,7 @@ if [[ -z ${tmp+x} ]]
 then
 	tmp=${wdr}
 fi
-tmp=${tmp}/tmp_${prjname}
+tmp=${tmp}/tmp_${prjname}_${sub}
 
 # Check input
 checkreqvar sub ses wdr std prjname

@@ -128,6 +128,9 @@ echo "************************************"
 ${scriptdir}/03.func_spacecomp.sh -func_in ${bold}_cr -fdir ${fdir} -anat ${anat} \
 								  -mref ${sbref} -aseg ${aseg} -tmp ${tmp}
 
+# If sbref was nothing until now, it's the sbref that was just produced by the previous step.
+[[ "${sbref}" == "none" ]] && sbref=${fdir}/../reg/sub-${sub}_mref
+[[ "${mask}" == "none" ]] && mask=${sbref}_brain_mask
 
 echo "************************************"
 echo "*** Func Fieldmap BOLD"

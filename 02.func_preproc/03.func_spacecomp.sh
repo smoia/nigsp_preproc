@@ -81,8 +81,9 @@ then
 	if [[ "${mref}" == "none" ]]
 	then
 		echo "Creating a reference for ${func}"
+		# Removing sub first and ses after in case ses in not there.
 		filesfx=${func#sub-*_}
-		filesfx=${funcsfx#ses-*_}
+		filesfx=${filesfx#ses-*_}
 		mref=${fdir}/../reg/${func%$filesfx}mref
 		fslroi ${func_in} ${func}_ref 42 1
 		echo "BETting reference ${func}_ref"
@@ -129,8 +130,9 @@ if [[ "${anat}" != "none" && ! -e "${anat2mref}.mat" ]]
 then
 	echo "Coregistering ${func} to ${anat}"
 	if_missing_do stop ../anat/${anat}_brain.nii.gz
-	flirt -in ../anat/${anat}_brain -ref ${mref}_brain -out ${anat}2${mrefsfx} -omat ${anat}2${mrefsfx}_fsl.mat \
-	-searchry -90 90 -searchrx -90 90 -searchrz -90 90
+	flirt -in ../anat/${anat}_brain -ref ${mref}_brain -out ${anat}2${mrefsfx} \
+		  -omat ${anat}2${mrefsfx}_fsl.mat \
+		  -searchry -90 90 -searchrx -90 90 -searchrz -90 90
 	echo "Affining for ANTs"
 	c3d_affine_tool -ref ${mref}_brain -src ../anat/${anat}_brain \
 	${anat}2${mrefsfx}_fsl.mat -fsl2ras -oitk ${anat}2${mrefsfx}0GenericAffine.mat
@@ -138,15 +140,26 @@ then
 fi
 
 asegsfx=$( basename ${aseg} )
-asegsfx=${aseg#*ses-*_}
-if [[ "${aseg}" != "none" && -e "../anat/${aseg}_seg.nii.gz" && -e "../reg/${anat}2${asegsfx}0GenericAffine.mat" && ! -e "../anat/${aseg}_seg2mref.nii.gz" ]]
+asegsfx=${aseg#sub-*_}
+asegsfx=${asegsfx#*ses-*_}
+if [[ "${aseg}" != "none" && -e "../anat/${aseg}_seg.nii.gz" && ! -e "../anat/${aseg}_seg2mref.nii.gz" ]]
 then
-	echo "Coregistering anatomical segmentation to ${func}"
-	antsApplyTransforms -d 3 -i ../anat/${aseg}_seg.nii.gz \
-						-r ${mref}.nii.gz -o ../anat/${aseg}_seg2mref.nii.gz \
-						-n Multilabel -v \
-						-t ${anat2mref}.mat \
-						-t [../reg/${anat}2${asegsfx}0GenericAffine.mat,1]
+	echo "Coregistering anatomical segmentation to ${func}..."
+	if [[ "${aseg}" != "${anat}" && -e "../reg/${anat}2${asegsfx}0GenericAffine.mat" ]]
+	then
+		echo "...in 2 steps"
+		antsApplyTransforms -d 3 -i ../anat/${aseg}_seg.nii.gz \
+							-r ${mref}.nii.gz -o ../anat/${aseg}_seg2mref.nii.gz \
+							-n Multilabel -v \
+							-t ${anat2mref}.mat \
+							-t [../reg/${anat}2${asegsfx}0GenericAffine.mat,1]
+	else
+		echo "...in 1 step"
+		antsApplyTransforms -d 3 -i ../anat/${aseg}_seg.nii.gz \
+							-r ${mref}.nii.gz -o ../anat/${aseg}_seg2mref.nii.gz \
+							-n Multilabel -v \
+							-t ${anat2mref}.mat
+	fi
 fi
 
 ## 03. Split and affine to ANTs if required
@@ -171,9 +184,5 @@ fi
 if [[ -d ../reg/${func}_mcf.mat ]]; then rm -r ../reg/${func}_mcf.mat; fi
 mv ${tmp}/${func}_mcf.mat ../reg/.
 
-if [[ "${mref}" == "${func}_avgref" ]]
-then
-	mv ${mref}* ../reg/.
-fi
 
 cd ${cwd}

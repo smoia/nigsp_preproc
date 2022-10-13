@@ -33,8 +33,8 @@ std=MNI152_1mm_T1_brain
 mmres=2
 voldiscard=10
 sbref=none
-fmask=default
-dmask=default
+fmask=none
+dmask=none
 fwhm=none
 slicetimeinterp=none
 direc=AP
@@ -157,6 +157,8 @@ then
 	then
 		runprepfld="${runprepfld} -overwrite"
 		run_anat=yes
+		run_func=yes
+		run_dwi=yes
 	fi
 
 	echo "# Generating the command:"
@@ -168,7 +170,7 @@ then
 fi
 
 wdr=${wdr}/derivatives/${prjname}
-tmp=${tmp}/tmp_${prjname}
+tmp=${tmp}/tmp_${prjname}_${sub}
 
 ######################################
 #########    Anat preproc    #########
@@ -186,9 +188,9 @@ then
 	then
 		# If asked & it's ses T1, run anat
 		${scriptdir}/anat_preproc.sh -sub ${sub} -ses ${ses} -wdr ${wdr} \
-												  -anat1sfx ${anat1sfx} -anat2sfx ${anat2sfx} \
-												  -std ${std} -mmres ${mmres} -normalise \
-												  -tmp ${tmp}
+									 -anat1sfx ${anat1sfx} -anat2sfx ${anat2sfx} \
+									 -std ${std} -mmres ${mmres} -normalise \
+									 -tmp ${tmp}
 	elif [ ! -d ${uni_adir} ]
 	then
 		# If it isn't ses 01 but that ses wasn't run, exit.
@@ -211,7 +213,7 @@ then
 	fi
 fi
 
-
+exit
 ######################################
 #########    Task preproc    #########
 ######################################
@@ -231,7 +233,7 @@ then
 								 -aseg ${aseg} -voldiscard ${voldiscard} \
 								 -slicetimeinterp ${slicetimeinterp} -sbref ${sbref} \
 								 -mask ${fmask} -fwhm ${fwhm} -tmp ${tmp} \
-								 -den_motreg -den_detrend
+								 -den_motreg -den_detrend -applynuisance
 
 fi
 
