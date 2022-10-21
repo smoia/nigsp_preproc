@@ -95,9 +95,9 @@ done
 
 #Derived variables
 fileprx=sub-${sub}_ses-${ses}
+[[ ${tmp} != "." ]] && fileprx=${tmp}/${fileprx}
 fdir=${wdr}/sub-${sub}/ses-${ses}/func
 bold=${fileprx}_task-rest_bold
-[[ ${tmp} != "." ]] && fileprx=${tmp}/${fileprx}
 ######################################
 #########    Task preproc    #########
 ######################################
