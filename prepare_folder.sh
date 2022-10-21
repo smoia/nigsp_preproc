@@ -26,7 +26,7 @@ mmres=no
 
 ### print input
 printline=$( basename -- $0 )
-echo "${printline} " "$@"
+echo "${printline}" "$@"
 # Parsing required and optional variables with flags
 # Also checking if a flag is the help request or the version
 while [ ! -z "$1" ]
