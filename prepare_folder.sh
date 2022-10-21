@@ -108,7 +108,7 @@ if_missing_do copy ${stdpath}/${std}.nii.gz ${sesfld}/reg/${std}.nii.gz
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/func/*.nii.gz ${tmp}/.
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/anat/*.nii.gz ${tmp}/.
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/fmap/*.nii.gz ${tmp}/.
-imcp ${sourcepath}/sub-${sub}/ses-${ses}/fmap/*.json ${tmp}/.
+cp ${sourcepath}/sub-${sub}/ses-${ses}/fmap/*.json ${tmp}/.
 imcp ${sourcepath}/sub-${sub}/ses-${ses}/dwi/*.nii.gz ${tmp}/.
 
 cd ${cwd}
