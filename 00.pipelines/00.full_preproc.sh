@@ -213,7 +213,6 @@ then
 	fi
 fi
 
-exit
 ######################################
 #########    Task preproc    #########
 ######################################
@@ -222,7 +221,7 @@ echo ""
 echo ""
 
 aseg=${uni_adir}/${anat1}
-anat=${uni_adir}/${anat2}
+anat=${uni_adir}/${anat1}
 [[ ${sbref} == "default" ]] && sbref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
 [[ ${fmask} == "default" ]] && fmask=${sbref}_brain_mask
 
@@ -249,7 +248,7 @@ echo ""
 echo ""
 
 aseg=${uni_adir}/${anat1}
-anat=${uni_adir}/${anat2}
+anat=${uni_adir}/${anat1}
 [[ ${dmask} == "default" ]] && dmask=none
 
 if [[ ${run_dwi} == "yes" ]]
