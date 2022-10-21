@@ -18,7 +18,7 @@ fi
 
 ### print input
 printline=$( basename -- $0 )
-echo "${printline} " "$@"
+echo "${printline}" "$@"
 # Parsing required and optional variables with flags
 # Also checking if a flag is the help request or the version
 while [ ! -z "$1" ]
@@ -26,7 +26,7 @@ do
 	case "$1" in
 		-anat_in)	anat_in=$2;shift;;
 		-adir)		adir=$2;shift;;
-		-std)		std=$2;shift;;
+		-std)		std_in=$2;shift;;
 		-mmres)		mmres=$2;shift;;
 
 		-h)			displayhelp;;
@@ -37,10 +37,10 @@ do
 done
 
 # Check input
-checkreqvar anat_in adir std mmres
+checkreqvar anat_in adir std_in mmres
 
 ### Remove nifti suffix
-for var in anat_in std
+for var in anat_in std_in
 do
 	eval "${var}=${!var%.nii*}"
 done
@@ -54,20 +54,20 @@ cwd=$(pwd)
 cd ${adir} || exit
 
 #Read and process input
-anat=$( basename ${anat_in%_*} )
+anat=$( basename ${anat_in} )
+std=$( basename ${std_in} )
+
+if_missing_do stop ${anat}.nii.gz
 
 ## 01. Normalization
-
-if [[ ! -e ../reg/${std}_mask.nii.gz ]]
-then
-	echo "Creating mask for ${std}"
-	fslmaths ../reg/${std} -bin ../reg/${std}_mask
-fi
+[[ "${std}" != "${std_in}" ]] && if_missing_do copy ${std_in}.nii.gz ../reg/${std}.nii.gz
+if_missing_do stop ../reg/${std}.nii.gz
+if_missing_do mask ../reg/${std}.nii.gz ../reg/${std}_mask.nii.gz
 
 anatsfx=${anat#*ses-*_}
 anatprx=${anat%_${anatsfx}}
 echo "Normalizing ${anat} to ${std}"
-antsRegistration -d 3 -r [../reg/${std}.nii.gz,${anat_in}.nii.gz,1] \
+antsRegistration -d 3 -r [../reg/${std}.nii.gz,${anat}.nii.gz,1] \
 				 -o [../reg/${anat}2std,../reg/${anat}2std.nii.gz,../reg/${anatprx}_std2${anatsfx}.nii.gz] \
 				 -x [../reg/${std}_mask.nii.gz, ${anat_in}_mask.nii.gz] \
 				 -n Linear -u 0 -w [0.005,0.995] \
@@ -86,7 +86,7 @@ antsRegistration -d 3 -r [../reg/${std}.nii.gz,${anat_in}.nii.gz,1] \
 				 -c [100x70x50x20,1e-6,10] \
 				 -f 8x4x2x1 \
 				 -s 3x2x1x0vox \
-				 -z 1 -v 1
+				 -z 1 -v 1 --float 0
 
 ## 02. Registration to downsampled MNI
 cd ../reg || exit
