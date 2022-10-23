@@ -22,6 +22,7 @@ fi
 anat=none
 mref=none
 aseg=none
+applymask=no
 antsaffine=no
 tmp=.
 
@@ -39,6 +40,7 @@ do
 		-anat)			anat=$2;shift;;
 		-mref)			mref=$2;shift;;
 		-aseg)			aseg=$2;shift;;
+		-applymask)		applymask=yes;;
 		-antsaffine)	antsaffine=yes;;
 		-tmp)			tmp=$2;shift;;
 
@@ -51,7 +53,7 @@ done
 
 # Check input
 checkreqvar func_in fdir
-checkoptvar anat mref aseg antsaffine tmp
+checkoptvar anat mref aseg applymask antsaffine tmp
 
 ### Remove nifti suffix
 for var in func_in anat mref aseg
@@ -76,7 +78,6 @@ nTR=$(fslval ${func_in} dim4)
 let nTR--
 
 ## 01. Motion Computation, if more than 1 volume
-
 if [[ ${nTR} -gt 1 ]]
 then
 	# 01.1. Mcflirt
@@ -100,6 +101,10 @@ then
 	if [[ -d ${tmp}/${func}_mcf.mat ]]; then rm -r ${tmp}/${func}_mcf.mat; fi
 	mcflirt -in ${func_in} -r ${mref} -out ${tmp}/${func}_mcf -stats -mats -plots
 
+	# Moving things around
+	if [[ -d ../reg/${func}_mcf.mat ]]; then rm -r ../reg/${func}_mcf.mat; fi
+	mv ${tmp}/${func}_mcf.mat ../reg/.
+
 	# 01.2. Demean motion parameters
 	echo "Demean and derivate ${func} motion parameters"
 	1d_tool.py -infile ${tmp}/${func}_mcf.par -demean -write ${func}_mcf_demean.par -overwrite
@@ -110,17 +115,26 @@ then
 	fsl_motion_outliers -i ${tmp}/${func}_mcf -o ${tmp}/${func}_mcf_dvars_confounds -s ${func}_dvars_post.par -p ${func}_dvars_post --dvars --nomoco
 	fsl_motion_outliers -i ${func_in} -o ${tmp}/${func}_mcf_dvars_confounds -s ${func}_dvars_pre.par -p ${func}_dvars_pre --dvars --nomoco
 	fsl_motion_outliers -i ${func_in} -o ${tmp}/${func}_mcf_fd_confounds -s ${func}_fd.par -p ${func}_fd --fd
+
+	# Set funcsource to the mcf file
+	funcsource=${tmp}/${func}_mcf
+else
+	# Set funcsoruce to func_in
+	funcsource=${func_in}
 fi
 
-if [[ ! -e "${mref}_brain_mask.nii.gz" &&  ! -e "${mref}_mask.nii.gz" && "${mref}" != "none" ]]
+if [[ "${applymask}" == "yes" ]]
 then
-	echo "BETting reference ${mref}"
-	bet ${mref} ${mref}_brain -R -f 0.5 -g 0 -n -m
-fi
+	if [[ ! -e "${mref}_brain_mask.nii.gz" &&  ! -e "${mref}_mask.nii.gz" && "${mref}" != "none" ]]
+	then
+		echo "BETting reference ${mref}"
+		bet ${mref} ${mref}_brain -R -f 0.5 -g 0 -n -m
+	fi
 
-# 01.4. Apply mask
-echo "BETting ${func}"
-fslmaths ${tmp}/${func}_mcf -mas ${mref}_brain_mask ${tmp}/${func}_bet
+	# 01.4. Apply mask
+	echo "BETting ${funcsource}"
+	fslmaths ${funcsource} -mas ${mref}_brain_mask ${tmp}/${func}_bet
+fi
 
 ## 02. Anat Coreg
 mrefsfx=$( basename ${mref} )
@@ -131,12 +145,12 @@ anat2mref=../reg/${anat}2${mrefsfx}0GenericAffine
 if [[ "${anat}" != "none" && ! -e "${anat2mref}.mat" ]]
 then
 	echo "Coregistering ${func} to ${anat}"
-	if_missing_do stop ../anat/${anat}_brain.nii.gz
-	flirt -in ../anat/${anat}_brain -ref ${mref}_brain -out ${anat}2${mrefsfx} \
+	if_missing_do stop ${anat}_brain.nii.gz
+	flirt -in ${anat}_brain -ref ${mref}_brain -out ${anat}2${mrefsfx} \
 		  -omat ${anat}2${mrefsfx}_fsl.mat \
 		  -searchry -90 90 -searchrx -90 90 -searchrz -90 90
 	echo "Affining for ANTs"
-	c3d_affine_tool -ref ${mref}_brain -src ../anat/${anat}_brain \
+	c3d_affine_tool -ref ${mref}_brain -src ${anat}_brain \
 	${anat}2${mrefsfx}_fsl.mat -fsl2ras -oitk ${anat}2${mrefsfx}0GenericAffine.mat
 	mv ${anat}2${mrefsfx}* ../reg/.
 fi
@@ -144,21 +158,21 @@ fi
 asegsfx=$( basename ${aseg} )
 asegsfx=${aseg#sub-*_}
 asegsfx=${asegsfx#*ses-*_}
-if [[ "${aseg}" != "none" && -e "../anat/${aseg}_seg.nii.gz" && ! -e "../anat/${aseg}_seg2mref.nii.gz" ]]
+if [[ "${aseg}" != "none" && -e "${aseg}_seg.nii.gz" && ! -e "${aseg}_seg2mref.nii.gz" ]]
 then
 	echo "Coregistering anatomical segmentation to ${func}..."
 	if [[ "${aseg}" != "${anat}" && -e "../reg/${anat}2${asegsfx}0GenericAffine.mat" ]]
 	then
 		echo "...in 2 steps"
-		antsApplyTransforms -d 3 -i ../anat/${aseg}_seg.nii.gz \
-							-r ${mref}.nii.gz -o ../anat/${aseg}_seg2mref.nii.gz \
+		antsApplyTransforms -d 3 -i ${aseg}_seg.nii.gz \
+							-r ${mref}.nii.gz -o ${aseg}_seg2mref.nii.gz \
 							-n Multilabel -v \
 							-t ${anat2mref}.mat \
 							-t [../reg/${anat}2${asegsfx}0GenericAffine.mat,1]
 	else
 		echo "...in 1 step"
-		antsApplyTransforms -d 3 -i ../anat/${aseg}_seg.nii.gz \
-							-r ${mref}.nii.gz -o ../anat/${aseg}_seg2mref.nii.gz \
+		antsApplyTransforms -d 3 -i ${aseg}_seg.nii.gz \
+							-r ${mref}.nii.gz -o ${aseg}_seg2mref.nii.gz \
 							-n Multilabel -v \
 							-t ${anat2mref}.mat
 	fi
@@ -181,10 +195,5 @@ then
 	done
 	rm -r ${tmp}/${func}_split
 fi
-
-# Moving things around
-if [[ -d ../reg/${func}_mcf.mat ]]; then rm -r ../reg/${func}_mcf.mat; fi
-mv ${tmp}/${func}_mcf.mat ../reg/.
-
 
 cd ${cwd}

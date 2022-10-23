@@ -7,7 +7,7 @@ displayhelp() {
 echo "Required:"
 echo "sub ses prjname wdr"
 echo "Optional:"
-echo "anat1sfx anat2sfx std mmres voldiscard sbref fmask dmask fwhm \
+echo "anat1sfx anat2sfx std mmres voldiscard mref fmask dmask fwhm \
 	  slicetimeinterp direc pepolar sliceorder mporder axis scriptdir \
 	  tmp overwrite run_prep run_anat run_func run_dwi debug"
 exit ${1:-0}
@@ -32,10 +32,10 @@ anat2sfx=acq-mp2rage_inv-2_MP2RAGE
 std=MNI152_1mm_T1_brain
 mmres=2
 voldiscard=10
-sbref=none
+mref=none
 fmask=none
 dmask=none
-fwhm=none
+fwhm=4
 slicetimeinterp=none
 direc=AP
 pepolar=none
@@ -65,7 +65,7 @@ do
 		-std)				std=$2;shift;;
 		-mmres)				mmres=$2;shift;;
 		-voldiscard)		voldiscard=$2;shift;;
-		-sbref)				sbref=$2;shift;;
+		-mref)				mref=$2;shift;;
 		-fmask)				fmask="$2";shift;;
 		-dmask)				dmask="$2";shift;;
 		-fwhm)				fwhm="$2";shift;;
@@ -96,14 +96,14 @@ done
 # Check input
 checkreqvar sub ses prjname wdr
 [[ ${scriptdir: -1} == "/" ]] && scriptdir=${scriptdir%/}
-checkoptvar anat1sfx anat2sfx std mmres voldiscard sbref fmask dmask fwhm
+checkoptvar anat1sfx anat2sfx std mmres voldiscard mref fmask dmask fwhm
 checkoptvar slicetimeinterp direc pepolar sliceorder mporder axis scriptdir
 checkoptvar tmp overwrite run_prep run_anat run_func run_dwi debug
 
 [[ ${debug} == "yes" ]] && set -x
 
 ### Remove nifti suffix
-for var in anat1sfx anat2sfx std sbref mask
+for var in anat1sfx anat2sfx std mref mask
 do
 	eval "${var}=${!var%.nii*}"
 done
@@ -141,7 +141,7 @@ echo ""
 echo "${printcall}"
 echo ""
 checkreqvar sub ses prjname wdr
-checkoptvar anat1sfx anat2sfx std mmres voldiscard sbref fmask dmask fwhm
+checkoptvar anat1sfx anat2sfx std mmres voldiscard mref fmask dmask fwhm
 checkoptvar slicetimeinterp direc pepolar sliceorder mporder axis scriptdir
 checkoptvar tmp overwrite run_prep run_anat run_func run_dwi debug
 
@@ -235,15 +235,15 @@ echo ""
 
 aseg=${uni_adir}/${anat1}
 anat=${uni_adir}/${anat1}
-[[ ${sbref} == "default" ]] && sbref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_sbref
-[[ ${fmask} == "default" ]] && fmask=${sbref}_brain_mask
+[[ ${mref} == "default" ]] && mref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_mref
+[[ ${fmask} == "default" ]] && fmask=${mref}_brain_mask
 
 if [[ ${run_func} == "yes" ]]
 then
 
 	${scriptdir}/func_preproc.sh -sub ${sub} -ses ${ses} -wdr ${wdr} -anat ${anat} \
 								 -aseg ${aseg} -voldiscard ${voldiscard} \
-								 -slicetimeinterp ${slicetimeinterp} -sbref ${sbref} \
+								 -slicetimeinterp ${slicetimeinterp} -mref ${mref} \
 								 -mask ${fmask} -fwhm ${fwhm} -tmp ${tmp} \
 								 -den_motreg -den_detrend -applynuisance
 
