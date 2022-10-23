@@ -58,6 +58,8 @@ checkoptvar mask repol sliceorder mporder tmp
 dwi_in=${dwi_in%.nii*}
 mask=${mask%.nii*}
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################

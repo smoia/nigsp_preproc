@@ -64,6 +64,8 @@ prfx=${func_in%_$sffx*}
 magnitude=${prfx}${fmap_str}_magnitude2
 phasediff=${prfx}${fmap_str}_phasediff
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################

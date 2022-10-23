@@ -52,6 +52,8 @@ checkoptvar axes tmp
 ### Remove nifti suffix
 dwi_in=${dwi_in%.nii*}
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################

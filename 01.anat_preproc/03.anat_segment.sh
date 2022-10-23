@@ -48,6 +48,8 @@ checkoptvar tmp
 ### Remove nifti suffix
 anat_in=${anat_in%.nii*}
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################

@@ -47,6 +47,8 @@ checkoptvar tmp
 ### Remove nifti suffix
 func_in=${func_in%.nii*}
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################

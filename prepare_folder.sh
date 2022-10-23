@@ -61,6 +61,8 @@ tmp=${tmp}/tmp_${prjname}_${sub}
 checkreqvar sub ses wdr std prjname
 checkoptvar overwrite stdpath mmres tmp
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################

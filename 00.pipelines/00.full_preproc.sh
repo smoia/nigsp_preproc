@@ -117,6 +117,8 @@ uni_adir=${first_ses_path}/anat
 
 ####################
 
+### Catch errors and exit on them
+set -e
 ######################################
 ######### Script starts here #########
 ######################################
