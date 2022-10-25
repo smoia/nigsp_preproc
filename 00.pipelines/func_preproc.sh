@@ -189,21 +189,21 @@ ${scriptdir}/02.func_fieldmap.sh -func_in ${bold}_mcf -fdir ${fdir} \
 fslmaths ${bold}_fmd -mas ${mask} ${bold}_bet
 
 
-echo "************************************"
-echo "*** Func greyplot rest BOLD (pre)"
-echo "************************************"
-echo "************************************"
+# echo "************************************"
+# echo "*** Func greyplot rest BOLD (pre)"
+# echo "************************************"
+# echo "************************************"
 
-${scriptdir}/12.func_grayplot.sh -func_in ${bold}_cr -fdir ${fdir} -anat_in ${anat} \
-								 -mref ${mref} -aseg ${aseg} -polort 4 -tmp ${tmp}
+# ${scriptdir}/12.func_grayplot.sh -func_in ${bold}_cr -fdir ${fdir} -anat_in ${anat} \
+# 								 -mref ${mref} -aseg ${aseg} -polort 4 -tmp ${tmp}
 
-boldout=$( basename ${bold%_*} )
-echo "mv ${bold}_gp_PVO.png ${fdir}/${boldout}_raw_gp_PVO.png"
-mv ${bold}_gp_PVO.png ${fdir}/${boldout}_raw_gp_PVO.png
-echo "mv ${bold}_gp_IJK.png ${fdir}/${boldout}_raw_gp_IJK.png"
-mv ${bold}_gp_IJK.png ${fdir}/${boldout}_raw_gp_IJK.png
-echo "mv ${bold}_gp_peel.png ${fdir}/${boldout}_raw_gp_peel.png"
-mv ${bold}_gp_peel.png ${fdir}/${boldout}_raw_gp_peel.png
+# boldout=$( basename ${bold%_*} )
+# echo "mv ${bold}_gp_PVO.png ${fdir}/${boldout}_raw_gp_PVO.png"
+# mv ${bold}_gp_PVO.png ${fdir}/${boldout}_raw_gp_PVO.png
+# echo "mv ${bold}_gp_IJK.png ${fdir}/${boldout}_raw_gp_IJK.png"
+# mv ${bold}_gp_IJK.png ${fdir}/${boldout}_raw_gp_IJK.png
+# echo "mv ${bold}_gp_peel.png ${fdir}/${boldout}_raw_gp_peel.png"
+# mv ${bold}_gp_peel.png ${fdir}/${boldout}_raw_gp_peel.png
 
 	
 echo "************************************"
@@ -248,19 +248,19 @@ echo "3dcalc -a ${boldsource}.nii.gz -b ${mask}.nii.gz -expr 'a*b' -prefix ${fdi
 	   -prefix ${fdir}/00.${boldout}_native_preprocessed.nii.gz \
 	   -short -gscale -overwrite
 
-echo "************************************"
-echo "*** Func greyplot rest BOLD (post)"
-echo "************************************"
-echo "************************************"
-${scriptdir}/12.func_grayplot.sh -func_in ${boldsource} -fdir ${fdir} -anat_in ${anat} \
-								 -mref ${mref} -aseg ${aseg} -polort 4 -tmp ${tmp}
+# echo "************************************"
+# echo "*** Func greyplot rest BOLD (post)"
+# echo "************************************"
+# echo "************************************"
+# ${scriptdir}/12.func_grayplot.sh -func_in ${boldsource} -fdir ${fdir} -anat_in ${anat} \
+# 								 -mref ${mref} -aseg ${aseg} -polort 4 -tmp ${tmp}
 
-echo "mv ${bold}_gp_PVO.png ${fdir}/00.${boldout}_native_preprocessed_gp_PVO.png"
-mv ${bold}_gp_PVO.png ${fdir}/00.${boldout}_native_preprocessed_gp_PVO.png
-echo "mv ${bold}_gp_IJK.png ${fdir}/00.${boldout}_native_preprocessed_gp_IJK.png"
-mv ${bold}_gp_IJK.png ${fdir}/00.${boldout}_native_preprocessed_gp_IJK.png
-echo "mv ${bold}_gp_peel.png ${fdir}/00.${boldout}_native_preprocessed_gp_peel.png"
-mv ${bold}_gp_peel.png ${fdir}/00.${boldout}_native_preprocessed_gp_peel.png
+# echo "mv ${bold}_gp_PVO.png ${fdir}/00.${boldout}_native_preprocessed_gp_PVO.png"
+# mv ${bold}_gp_PVO.png ${fdir}/00.${boldout}_native_preprocessed_gp_PVO.png
+# echo "mv ${bold}_gp_IJK.png ${fdir}/00.${boldout}_native_preprocessed_gp_IJK.png"
+# mv ${bold}_gp_IJK.png ${fdir}/00.${boldout}_native_preprocessed_gp_IJK.png
+# echo "mv ${bold}_gp_peel.png ${fdir}/00.${boldout}_native_preprocessed_gp_peel.png"
+# mv ${bold}_gp_peel.png ${fdir}/00.${boldout}_native_preprocessed_gp_peel.png
 
 
 [[ ${debug} == "yes" ]] && set +x
