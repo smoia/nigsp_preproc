@@ -1,3 +1,10 @@
 For HCP, run:
 
 apptainer exec -e --no-home -B $DATA/TiMeS/tmp:/tmp -B $DATA/TiMeS:/data -B $GITLAB/nigsp_preproc:/scripts general_preproc.sif /scripts/98.hpc/batch_pipeline.sh /scripts/98.hpc/list*
+
+
+For debug:
+
+export BASH_ENV=/tmp/.bash_env
+echo set -x > /tmp/.bash_env
+source /tmp/.bash_env

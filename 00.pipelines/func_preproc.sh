@@ -264,3 +264,5 @@ echo "3dcalc -a ${boldsource}.nii.gz -b ${mask}.nii.gz -expr 'a*b' -prefix ${fdi
 
 
 [[ ${debug} == "yes" ]] && set +x
+
+exit 0

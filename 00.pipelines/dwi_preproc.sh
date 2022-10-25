@@ -157,3 +157,5 @@ ${scriptdir}/04.dwi_spacecomp.sh -dref ${ddir}/${dwi}_brain -ddir ${ddir} -anat 
 
 
 [[ ${debug} == "yes" ]] && set +x
+
+exit 0
