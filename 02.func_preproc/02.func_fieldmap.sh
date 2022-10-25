@@ -19,7 +19,7 @@ if [[ ( $# -eq 0 ) ]]
 fi
 
 # Preparing the default values for variables
-fmap_str=''
+fmap_str=none
 fullfmap=none
 scriptdir="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 scriptdir=${scriptdir%/*}/..
@@ -59,11 +59,17 @@ do
 done
 
 ### Name images
-sffx=${func_in##*ses-*_}
-prfx=${func_in%_$sffx*}
-magnitude=${prfx}${fmap_str}_magnitude2
-phasediff=${prfx}${fmap_str}_phasediff
-
+sffx=$( basename ${func_in} )
+sffx=${sffx#*ses-*_}
+prfx=${func_in%_${sffx}*}
+if [[ ${fmap_str} != "none" ]]
+then
+	magnitude=${prfx}${fmap_str}_magnitude2
+	phasediff=${prfx}${fmap_str}_phasediff
+else
+	magnitude=${prfx}_magnitude2
+	phasediff=${prfx}_phasediff
+fi
 ### Catch errors and exit on them
 set -e
 ######################################
@@ -96,7 +102,7 @@ then
 
 	fmap=${func}_fieldmap
 
-	mkdir ${fmap}
+	replace_and mkdir ${fmap}
 	bet ${magnitude} ${magnitude}_brain  -R -f 0.5 -g 0 -n -m
 
 	cd ${fmap}
@@ -110,6 +116,6 @@ fi
 
 # 03.2. Applying the warping to the functional volume
 echo "Applying Fieldmap to ${func}"
-fugue ${func_in} --loadfmap=${fullfmap} --dwell=0.0000029 -u ${tmp}/${func}_fmd
+fugue -i ${func_in} --loadfmap=${fullfmap} --dwell=0.0000029 -u ${tmp}/${func}_fmd
 
 cd ${cwd}

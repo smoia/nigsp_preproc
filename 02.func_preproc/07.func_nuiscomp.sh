@@ -93,27 +93,27 @@ fmat=$( basename ${fmat_in%.nii.gz} )
 if [[ "${adir}" != "none" ]]; then aseg=${adir}/${aseg}; fi
 if [[ -e "${aseg}_seg_eroded.nii.gz" ]] &&  [[ "${den_tissues}" == "yes" ]]
 then
-	if [[ ! -e "${aseg}_seg2sbref.nii.gz" || ! -e "${aseg}_GM_native.nii.gz" ]]
+	if [[ ! -e "${aseg}_seg2mref.nii.gz" || ! -e "${aseg}_GM_native.nii.gz" ]]
 	then
 		echo "Missing segmentation in native space"
 		asegsfx=$( basename ${aseg} )
 		asegsfx=${aseg#*ses-*_}
-		if_missing_do stop ../reg/$( basename ${anat})2sbref0GenericAffine.mat
+		if_missing_do stop ../reg/$( basename ${anat})2mref0GenericAffine.mat
 		if_missing_do stop ../reg/$( basename ${anat})2${asegsfx}0GenericAffine.mat
 
 		echo "Coregistering segmentations to ${func}"
 		antsApplyTransforms -d 3 -i ${aseg}_seg_eroded.nii.gz -r ${mref}.nii.gz \
 		-o ${aseg}_seg2mref.nii.gz -n MultiLabel \
-		-t ../reg/$( basename ${anat})2sbref0GenericAffine.mat \
+		-t ../reg/$( basename ${anat})2mref0GenericAffine.mat \
 		-t [../reg/$( basename ${anat})2${asegsfx}0GenericAffine.mat,1]
 		antsApplyTransforms -d 3 -i ${aseg}_GM_dilated.nii.gz -r ${mref}.nii.gz \
 		-o ${aseg}_GM_native.nii.gz -n MultiLabel \
-		-t ../reg/$( basename ${anat})2sbref0GenericAffine.mat \
+		-t ../reg/$( basename ${anat})2mref0GenericAffine.mat \
 		-t [../reg/$( basename ${anat})2${asegsfx}0GenericAffine.mat,1]
 	fi
 	echo "Extracting average WM and CSF in ${func}"
 	3dDetrend -polort ${polort} -prefix ${tmp}/${func}_dtd.nii.gz ${func_in}.nii.gz -overwrite
-	fslmeants -i ${tmp}/${func}_dtd.nii.gz -o ${func}_avg_tissue.1D --label=${aseg}_seg2sbref.nii.gz
+	fslmeants -i ${tmp}/${func}_dtd.nii.gz -o ${func}_avg_tissue.1D --label=${aseg}_seg2mref.nii.gz
 else
 	echo "Skip average tissue extraction"
 fi
@@ -167,7 +167,7 @@ then
  -stim_file 1 ${func}_avg_tissue.1D'[0]' -stim_base 1 -stim_label 1 CSF \
  -stim_file 2 ${func}_avg_tissue.1D'[2]' -stim_base 2 -stim_label 2 WM"
 else
-	echo "Skip detrend"
+	echo "Skip average tissue denoising"
 fi
 
 # Report the 3dDeconvolve call

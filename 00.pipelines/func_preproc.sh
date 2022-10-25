@@ -22,7 +22,7 @@ fi
 # Preparing the default values for variables
 anat=none
 aseg=none
-fmap_str=''
+fmap_str=none
 fullfmap=none
 voldiscard=10
 polort=4
@@ -147,7 +147,7 @@ then
 	[[ "${fullfmap}" == "none" ]] && fullfmap=${fdir}/$( basename ${bold} )_fieldmap/fmap_rads
 	tmp_mref=${mref}
 	mref=${fdir}/../reg/sub-${sub}_mref
-	immv ${tmp_mref}_fmd ${mref}
+	immv ${bold}_fmd ${mref}
 
 	echo "************************************"
 	echo "*** Func spacecomp MREF BOLD"
@@ -157,7 +157,7 @@ then
 	[[ "${mask}" == "default" ]] && mask=none
 	# BET mref and compute anat coreg to it 
 	${scriptdir}/11.mref_spacecomp.sh -mref_in ${mref} -fdir ${fdir} -anat ${anat} \
-									  -mask ${mask} -aseg ${aseg} -tmp ${tmp}
+									  -mask ${mask} -aseg ${aseg}
 
 	# If mask exists copy it in reg folder
 	[[ "${mask}" != "none" ]] && imcp ${mask} ${mref}_brain_mask

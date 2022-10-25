@@ -19,9 +19,9 @@ if [[ ( $# -eq 0 ) ]]
 fi
 
 # Preparing the default values for variables
-anat=none
+anat_in=none
 mask=none
-aseg=none
+aseg_in=none
 
 ### print input
 printline=$( basename -- $0 )
@@ -34,9 +34,9 @@ do
 		-mref_in)	mref_in=$2;shift;;
 		-fdir)		fdir=$2;shift;;
 
-		-anat)			anat=$2;shift;;
+		-anat)			anat_in=$2;shift;;
 		-mask)			mask=$2;shift;;
-		-aseg)			aseg=$2;shift;;
+		-aseg)			aseg_in=$2;shift;;
 
 		-h)			displayhelp;;
 		-v)			version;exit 0;;
@@ -47,10 +47,10 @@ done
 
 # Check input
 checkreqvar mref_in fdir
-checkoptvar anat mask aseg
+checkoptvar anat_in mask aseg_in
 
 ### Remove nifti suffix
-for var in mref_in anat mask aseg
+for var in mref_in anat_in mask aseg_in
 do
 	eval "${var}=${!var%.nii*}"
 done
@@ -66,7 +66,9 @@ cwd=$(pwd)
 cd ${fdir} || exit
 
 #Read and process input
-mref=$( basename ${mref_in%_*} )
+mref=$( basename ${mref_in} )
+anat=$( basename ${anat_in} )
+aseg=$( basename ${aseg_in} )
 
 ## 01. Motion Computation, if more than 1 volume
 if [[ "${mask}" == "none" ]]
@@ -80,42 +82,40 @@ else
 fi
 
 ## 02. Anat Coreg
-mrefsfx=$( basename ${mref} )
 mrefsfx=${mref#sub-*_}
 mrefsfx=${mrefsfx#ses-*_}
-anat2mref=../reg/${anat}2${mrefsfx}0GenericAffine
+anat2mref=../reg/${anat}2mref0GenericAffine
 
-if [[ "${anat}" != "none" && ! -e "${anat2mref}.mat" ]]
+if [[ "${anat_in}" != "none" && ! -e "${anat2mref}.mat" ]]
 then
-	echo "Coregistering ${mref} to ${anat}"
-	if_missing_do stop ${anat}_brain.nii.gz
-	flirt -in ${anat}_brain -ref ../reg/${mref}_brain -out ${anat}2${mrefsfx} \
-		  -omat ${anat}2${mrefsfx}_fsl.mat \
+	echo "Coregistering ${mref} to ${anat_in}"
+	if_missing_do stop ${anat_in}_brain.nii.gz
+	flirt -in ${anat_in}_brain -ref ../reg/${mref}_brain -out ${anat}2mref \
+		  -omat ${anat}2mref_fsl.mat \
 		  -searchry -90 90 -searchrx -90 90 -searchrz -90 90
 	echo "Affining for ANTs"
-	c3d_affine_tool -ref ../reg/${mref}_brain -src ${anat}_brain \
-	${anat}2${mrefsfx}_fsl.mat -fsl2ras -oitk ${anat}2${mrefsfx}0GenericAffine.mat
-	mv ${anat}2${mrefsfx}* ../reg/.
+	c3d_affine_tool -ref ../reg/${mref}_brain -src ${anat_in}_brain \
+	${anat}2mref_fsl.mat -fsl2ras -oitk ${anat2mref}.mat
+	mv ${anat}2mref* ../reg/.
 fi
 
-asegsfx=$( basename ${aseg} )
 asegsfx=${aseg#sub-*_}
 asegsfx=${asegsfx#*ses-*_}
-if [[ "${aseg}" != "none" && -e "${aseg}_seg.nii.gz" && ! -e "${aseg}_seg2mref.nii.gz" ]]
+if [[ "${aseg}" != "none" && -e "${aseg_in}_seg.nii.gz" && ! -e "${aseg_in}_seg2mref.nii.gz" ]]
 then
 	echo "Coregistering anatomical segmentation to ${mref}..."
 	if [[ "${aseg}" != "${anat}" && -e "../reg/${anat}2${asegsfx}0GenericAffine.mat" ]]
 	then
 		echo "...in 2 steps"
-		antsApplyTransforms -d 3 -i ${aseg}_seg.nii.gz \
-							-r ../reg/${mref}_brain.nii.gz -o ${aseg}_seg2mref.nii.gz \
+		antsApplyTransforms -d 3 -i ${aseg_in}_seg.nii.gz \
+							-r ../reg/${mref}_brain.nii.gz -o ${aseg_in}_seg2mref.nii.gz \
 							-n Multilabel -v \
 							-t ${anat2mref}.mat \
 							-t [../reg/${anat}2${asegsfx}0GenericAffine.mat,1]
 	else
 		echo "...in 1 step"
-		antsApplyTransforms -d 3 -i ${aseg}_seg.nii.gz \
-							-r ../reg/${mref}_brain.nii.gz -o ${aseg}_seg2mref.nii.gz \
+		antsApplyTransforms -d 3 -i ${aseg_in}_seg.nii.gz \
+							-r ../reg/${mref}_brain.nii.gz -o ${aseg_in}_seg2mref.nii.gz \
 							-n Multilabel -v \
 							-t ${anat2mref}.mat
 	fi
