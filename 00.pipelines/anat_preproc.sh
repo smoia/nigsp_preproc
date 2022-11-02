@@ -5,9 +5,9 @@ source $( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/../utils.sh
 
 displayhelp() {
 echo "Required:"
-echo "sub ses wdr"
+echo "sub ses wdr anat1sfx"
 echo "Optional:"
-echo "anat1sfx anat2sfx std mmres normalise scriptdir tmp debug"
+echo "anat2sfx std mmres normalise scriptdir tmp debug"
 exit ${1:-0}
 }
 
@@ -40,8 +40,8 @@ do
 		-sub)		sub=$2;shift;;
 		-ses)		ses=$2;shift;;
 		-wdr)		wdr=$2;shift;;
-
 		-anat1sfx)	anat1sfx=$2;shift;;
+
 		-anat2sfx)	anat2sfx=$2;shift;;
 		-std)		std=$2;shift;;
 		-mmres)		mmres=$2;shift;;
@@ -58,9 +58,9 @@ do
 done
 
 # Check input
-checkreqvar sub ses wdr
+checkreqvar sub ses wdr anat1sfx
 [[ ${scriptdir: -1} == "/" ]] && scriptdir=${scriptdir%/}
-checkoptvar anat1sfx anat2sfx std mmres normalise scriptdir tmp debug
+checkoptvar anat2sfx std mmres normalise scriptdir tmp debug
 
 [[ ${debug} == "yes" ]] && set -x
 
