@@ -23,5 +23,6 @@ mapfile -t sublist< <( cat ${list} )
 for sub in "${sublist[@]}"
 do
 	sub=${sub#sub-}
-	${sdir}/00.pipelines/00.full_preproc.sh -sub ${sub} -ses T1 -wdr /data -prjname preproc -tmp /tmp -fwhm 4 -skip_dwi
+	# ${sdir}/00.pipelines/00.full_preproc.sh -sub ${sub} -ses T1 -wdr /data -prjname preproc -tmp /tmp -fwhm 4 -skip_dwi
+	${sdir}/00.pipelines/00.full_preproc.sh -sub ${sub} -ses T2 -wdr /data -prjname preproc -tmp /tmp -fwhm 4 -skip_dwi
 done
