@@ -114,6 +114,7 @@ fileprx=sub-${sub}_ses-${ses}
 
 first_ses_path=${wdr}/derivatives/${prjname}/sub-${sub}/ses-T1
 uni_adir=${first_ses_path}/anat
+uni_regdir=${first_ses_path}/reg
 
 ####################
 
@@ -235,11 +236,35 @@ echo ""
 
 aseg=${uni_adir}/${anat1}
 anat=${uni_adir}/${anat1}
-[[ ${mref} == "default" ]] && mref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_mref
-[[ ${fmask} == "default" ]] && fmask=${mref}_brain_mask
-
 if [[ ${run_func} == "yes" ]]
 then
+	# If ses > T1, then copy mref to new reg folder and set it as mref.
+	if [ ${ses} == "T1" ]
+	then
+		[[ ${mref} == "default" ]] && mref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_mref
+		[[ ${fmask} == "default" ]] && fmask=${mref}_brain_mask
+	elif [ ! -d ${uni_regdir} ]
+	then
+		# If it isn't ses 01 but that ses wasn't run, exit.
+		echo "ERROR: session T1 reg folder doesn't exists"
+		echo "   ${uni_regdir}"
+		echo "doesn't exist. For the moment, this means the program quits"
+		echo "Please run the first session of each subject first"
+		exit 1
+	elif [ -d ${uni_regdir} ]
+	then
+		# If it isn't ses 01, and that ses was run, copy relevant files.
+		mkdir -p ${wdr}/sub-${sub}/ses-${ses}/reg
+		cp ${uni_regdir}/!(*mcf.mat) ${wdr}/sub-${sub}/ses-${ses}/reg/.
+		# Make sure the mref is there though
+		if [ ! -e ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_mref.nii.gz ]
+		then
+			echo "ERROR: common mref file doesn't exists. Exiting."
+			exit 1
+		fi
+		[[ ${mref} == "default" ]] && mref=${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_mref
+		[[ ${fmask} == "default" ]] && fmask=${mref}_brain_mask		
+	fi
 
 	${scriptdir}/func_preproc.sh -sub ${sub} -ses ${ses} -wdr ${wdr} -anat ${anat} \
 								 -aseg ${aseg} -voldiscard ${voldiscard} \
