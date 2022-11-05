@@ -255,7 +255,9 @@ then
 	then
 		# If it isn't ses 01, and that ses was run, copy relevant files.
 		mkdir -p ${wdr}/sub-${sub}/ses-${ses}/reg
+		set +e
 		cp ${uni_regdir}/* ${wdr}/sub-${sub}/ses-${ses}/reg/.
+		set -e
 		# Make sure the mref is there though
 		if [ ! -e ${wdr}/sub-${sub}/ses-${ses}/reg/sub-${sub}_mref.nii.gz ]
 		then
